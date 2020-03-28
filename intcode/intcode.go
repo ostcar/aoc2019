@@ -8,6 +8,7 @@ import (
 const (
 	pModePosition = iota
 	pModeImmediate
+	pModeRelative
 )
 
 // Computer runs a intcode program.
@@ -21,6 +22,7 @@ type Computer struct {
 	output       chan int
 	returnOutput bool
 	pos          int
+	relativeBase int
 }
 
 // New creates a new computer from an input code.
@@ -64,25 +66,43 @@ func (c *Computer) Run() []int {
 }
 
 func (c *Computer) getOpArgs(nr int) (operation, []int) {
-	opArgs := splitInt(c.memory[nr])
+	opArgs := splitInt(c.get(nr))
 	opCode, argsMode := splitOpArgs(opArgs)
 
 	op, ok := c.operations[opCode]
 	if !ok {
-		panic(fmt.Sprintf("Unknown operation %d on position %d", c.memory[nr], nr))
+		panic(fmt.Sprintf("Unknown operation %d on position %d", c.get(nr), nr))
 	}
 
 	var args []int
 	for i := 0; i < op.argCount; i++ {
 		switch get(argsMode, i) {
 		case pModePosition:
-			args = append(args, c.memory[nr+i+1])
+			args = append(args, c.get(nr+i+1))
 		case pModeImmediate:
 			args = append(args, nr+i+1)
+		case pModeRelative:
+			args = append(args, c.get(nr+i+1)+c.relativeBase)
 		default:
 			panic(fmt.Sprintf("Unknown parameter mode %d on position %d", get(argsMode, i), nr))
 		}
 	}
 
 	return op, args
+}
+
+func (c *Computer) get(nr int) int {
+	if len(c.memory) <= nr {
+		return 0
+	}
+	return c.memory[nr]
+}
+
+func (c *Computer) set(nr, value int) {
+	if len(c.memory) <= nr {
+		buf := make([]int, nr+1)
+		copy(buf, c.memory)
+		c.memory = buf
+	}
+	c.memory[nr] = value
 }
