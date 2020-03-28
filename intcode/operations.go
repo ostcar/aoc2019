@@ -2,19 +2,20 @@ package intcode
 
 func (c *Computer) setOperations() {
 	c.operations = map[int]operation{
-		99: operation{opDone, 0},
-		1:  operation{opAdd, 3},
-		2:  operation{opMul, 3},
-		3:  operation{opInput, 1},
-		4:  operation{opOutput, 1},
-		5:  operation{opJunpTrue, 2},
-		6:  operation{opJunpFalse, 2},
-		7:  operation{opLess, 3},
-		8:  operation{opEquals, 3},
+		99: operation{"exit", opDone, 0},
+		1:  operation{"add", opAdd, 3},
+		2:  operation{"multi", opMul, 3},
+		3:  operation{"input", opInput, 1},
+		4:  operation{"output", opOutput, 1},
+		5:  operation{"jump true", opJunpTrue, 2},
+		6:  operation{"jump false", opJunpFalse, 2},
+		7:  operation{"less", opLess, 3},
+		8:  operation{"equal", opEquals, 3},
 	}
 }
 
 type operation struct {
+	name     string
 	run      opCode
 	argCount int
 }
@@ -36,12 +37,12 @@ func opMul(c *Computer, args []int) {
 }
 
 func opInput(c *Computer, args []int) {
-	c.memory[args[0]] = c.input
+	c.memory[args[0]] = <-c.input
 	c.pos += 2
 }
 
 func opOutput(c *Computer, args []int) {
-	c.output = append(c.output, c.memory[args[0]])
+	c.output <- c.memory[args[0]]
 	c.pos += 2
 }
 

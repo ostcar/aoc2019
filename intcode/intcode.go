@@ -12,13 +12,15 @@ const (
 
 // Computer runs a intcode program.
 type Computer struct {
-	memory     []int
-	done       bool
-	operations map[int]operation
-	mode       int
-	input      int
-	output     []int
-	pos        int
+	name         string
+	memory       []int
+	done         bool
+	operations   map[int]operation
+	mode         int
+	input        <-chan int
+	output       chan int
+	returnOutput bool
+	pos          int
 }
 
 // New creates a new computer from an input code.
@@ -34,6 +36,10 @@ func New(input string, ops ...Option) *Computer {
 	for _, op := range ops {
 		op(c)
 	}
+	if c.output == nil {
+		c.output = make(chan int, 99)
+		c.returnOutput = true
+	}
 	c.setOperations()
 	return c
 }
@@ -44,7 +50,17 @@ func (c *Computer) Run() []int {
 		op, args := c.getOpArgs(c.pos)
 		op.run(c, args)
 	}
-	return c.output
+	close(c.output)
+
+	if !c.returnOutput {
+		return nil
+	}
+
+	var out []int
+	for v := range c.output {
+		out = append(out, v)
+	}
+	return out
 }
 
 func (c *Computer) getOpArgs(nr int) (operation, []int) {
