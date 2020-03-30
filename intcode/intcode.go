@@ -65,6 +65,11 @@ func (c *Computer) Run() []int {
 	return out
 }
 
+// Manipulate sets a value in memory.
+func (c *Computer) Manipulate(index int, value int) {
+	c.set(index, value)
+}
+
 func (c *Computer) getOpArgs(nr int) (operation, []int) {
 	opArgs := splitInt(c.get(nr))
 	opCode, argsMode := splitOpArgs(opArgs)
