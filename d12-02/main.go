@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"sort"
 )
 
 var example1 = []*moon{
@@ -28,33 +27,21 @@ var real = []*moon{
 }
 
 func main() {
-	moons := example1
+	moons := real
 	fmt.Println(findRepeat(moons))
 }
 
 func findRepeat(moons []*moon) uint64 {
-	var rollup [2][4][3]int
-	var start [2][4][3]int
-	var found [4][3]int
+	var found [3]uint64
 	var success bool
+
+	start := writeDataBackup(moons)
 	for i := 0; i < 10000000; i++ {
-		if i == 0 {
-			writeRollup(moons, &start)
-		}
 		// calc
 		next(moons)
 
-		// set rollup
-		writeRollup(moons, &rollup)
-
-		// set second value
-		if i == 0 {
-			writeRollup(moons, &start)
-			continue
-		}
-
 		// compare
-		if cmpRollup(&start, &rollup, &found, i) {
+		if cmpRollup(moons, start, &found, i+1) {
 			success = true
 			break
 		}
@@ -63,58 +50,36 @@ func findRepeat(moons []*moon) uint64 {
 		log.Fatalf("cound not find all :(")
 	}
 
-	fmt.Println(found)
-
-	seen := make(map[uint64]bool)
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 3; j++ {
-			seen[uint64(found[i][j])] = true
-		}
-	}
-
-	var ints []uint64
-	for i := range seen {
-		ints = append(ints, i)
-	}
-
-	sort.Slice(ints, func(i, j int) bool {
-		return ints[i] < ints[j]
-	})
-
-	fmt.Println(ints)
-	return lcm(ints...)
+	return lcm(found[0], found[1], found[2])
 }
 
-func cmpRollup(r1, r2 *[2][4][3]int, found *[4][3]int, step int) bool {
+func cmpRollup(moons []*moon, start [3][8]int, found *[3]uint64, step int) bool {
+	values := writeDataBackup(moons)
+
 	var foundCount int
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 3; j++ {
-			if found[i][j] != 0 {
-				foundCount++
-				continue
-			}
-
-			if r1[0][i][j] == r2[0][i][j] && r1[1][i][j] == r2[1][i][j] {
-				found[i][j] = step
-			}
+	for i := 0; i < 3; i++ {
+		if found[i] != 0 {
+			foundCount++
+			continue
+		}
+		if values[i] == start[i] {
+			found[i] = uint64(step)
 		}
 	}
-	return foundCount == 4*3
+	return foundCount == 3
 }
 
-func writeRollup(moons []*moon, data *[2][4][3]int) {
-	data[0] = data[1]
+func writeDataBackup(moons []*moon) [3][8]int {
+	var data [3][8]int
 	for i := 0; i < 4; i++ {
-		data[1][i][0] = moons[i].vx
-		data[1][i][1] = moons[i].vy
-		data[1][i][2] = moons[i].vz
+		data[0][i] = moons[i].x
+		data[0][i+4] = moons[i].vx
+		data[1][i] = moons[i].y
+		data[1][i+4] = moons[i].vy
+		data[2][i] = moons[i].z
+		data[2][i+4] = moons[i].vz
 	}
-}
-
-func prepare(moons []*moon) {
-	for i, m := range moons {
-		m.id = i
-	}
+	return data
 }
 
 func steps(moons []*moon, nr int) {
@@ -141,7 +106,6 @@ func energy(moons []*moon) int {
 }
 
 type moon struct {
-	id         int
 	x, y, z    int
 	vx, vy, vz int
 }

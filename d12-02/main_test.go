@@ -9,7 +9,6 @@ func TestSteps(t *testing.T) {
 		&moon{x: 4, y: -8, z: 8},
 		&moon{x: 3, y: 5, z: -1},
 	}
-	prepare(moons)
 	steps(moons, 100)
 	if got := energy(moons); got != 179 {
 		t.Errorf("Got energy %d, expected 179", got)
