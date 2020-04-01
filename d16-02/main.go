@@ -19,16 +19,18 @@ func main() {
 
 // TTF implements the algo
 func TTF(ints []int) string {
+	const phasesCount = 100
 	newInts := make([]int, len(ints))
-	for phaseNr := 0; phaseNr < 100; phaseNr++ {
+	for phaseNr := 0; phaseNr < phasesCount; phaseNr++ {
 		for i := 0; i < len(ints); i++ {
 			var sum int
-			for j := 0; j < len(ints); j++ {
-				idx := ((j + 1) / (i + 1)) % 4
-				if idx%2 == 0 {
-					continue
+			for j := 0; j < len(ints); j += 4 * (i + 1) {
+				for k := i; k < i+i+1 && k+j < len(ints); k++ {
+					sum += ints[j+k]
 				}
-				sum += (2 - idx) * ints[j]
+				for k := 3*(i+1) - 1; k < 3*(i+1)+i && k+j < len(ints); k++ {
+					sum -= ints[j+k]
+				}
 			}
 			newInts[i] = simplify(sum)
 		}
