@@ -20,12 +20,19 @@ func main() {
 // TTF implements the algo
 func TTF(ints []int) string {
 	newInts := make([]int, len(ints))
-
 	for phaseNr := 0; phaseNr < 100; phaseNr++ {
 		for i := 0; i < len(ints); i++ {
 			var sum int
 			for j := 0; j < len(ints); j++ {
-				sum += ints[j] * pattern(i, j)
+				idx := ((j + 1) / (i + 1)) % 4
+				if idx == 0 || idx == 2 {
+					continue
+				}
+				if idx == 1 {
+					sum += ints[j]
+				} else {
+					sum -= ints[j]
+				}
 			}
 			newInts[i] = simplify(sum)
 		}
@@ -39,12 +46,6 @@ func simplify(nr int) int {
 		nr *= -1
 	}
 	return nr % 10
-}
-
-func pattern(phaseNr, i int) int {
-	pattern := []int{0, 1, 0, -1}
-	idx := ((i + 1) / (phaseNr + 1)) % len(pattern)
-	return pattern[idx]
 }
 
 func bsToInts(data []byte) []int {
