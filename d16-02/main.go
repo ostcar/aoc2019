@@ -8,47 +8,44 @@ import (
 	"strconv"
 )
 
+/*
+I could not solve it and used this solution:
+https://github.com/Gravitar64/Advent-of-Code-2019/blob/master/AoC_Tag%2016a.py
+*/
 func main() {
 	data, err := ioutil.ReadFile("input.txt")
 	if err != nil {
 		log.Fatalf("Can not read input: %v", err)
 	}
+
+	offset, err := strconv.Atoi(string(data[:7]))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create ints
 	ints := bsToInts(bytes.TrimSpace(data))
-	fmt.Println(TTF(repeated(ints)))
-}
+	ints = repeated(ints, 10_000)
+	ints = ints[offset:]
 
-// TTF implements the algo
-func TTF(ints []int) string {
-	const phasesCount = 100
-	newInts := make([]int, len(ints))
-	// log.Printf("len(ints)== %d", len(ints))
-	for phaseNr := 0; phaseNr < phasesCount; phaseNr++ {
-		// log.Printf("Phase: %d\n", phaseNr)
-		for i := 0; i < len(ints); i++ {
-			// if i%1000 == 0 {
-			// 	log.Printf("i: %d\n", i)
-			// }
-			var sum int
-			for j := 0; j < len(ints)-i; j += 4 * (i + 1) {
-				for k := i; k < i+i+1 && k+j < len(ints); k++ {
-					sum += ints[j+k]
-				}
-				for k := 3*(i+1) - 1; k < 3*(i+1)+i && k+j < len(ints); k++ {
-					sum -= ints[j+k]
-				}
-			}
-			newInts[i] = simplify(sum)
+	for i := 0; i < 100; i++ {
+		ps := sum(ints)
+		for j := 0; j < len(ints); j++ {
+			t := ps
+			ps -= ints[j]
+			ints[j] = t % 10
 		}
-		ints = newInts
 	}
-	return string(intsToBs(ints)[:8])
+	fmt.Println(string(intsToBs(ints[:8])))
+
 }
 
-func simplify(nr int) int {
-	if nr < 0 {
-		nr *= -1
+func sum(ints []int) int {
+	var count int
+	for _, v := range ints {
+		count += v
 	}
-	return nr % 10
+	return count
 }
 
 func bsToInts(data []byte) []int {
@@ -71,16 +68,11 @@ func intsToBs(ints []int) []byte {
 	return bs
 }
 
-const repeatedCount = 10000
+func repeated(ints []int, count int) []int {
+	r := make([]int, 0, len(ints)*count)
+	for i := 0; i < count; i++ {
+		r = append(r, ints...)
 
-func repeated(ints []int) []int {
-	r := make([]int, len(ints)*repeatedCount)
-	for i := 0; i < len(ints); i++ {
-		v := ints[i]
-		for j := 0; j < repeatedCount; j++ {
-			idx := j + i*repeatedCount
-			r[idx] = v
-		}
 	}
 	return r
 }
