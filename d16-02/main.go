@@ -21,10 +21,15 @@ func main() {
 func TTF(ints []int) string {
 	const phasesCount = 100
 	newInts := make([]int, len(ints))
+	// log.Printf("len(ints)== %d", len(ints))
 	for phaseNr := 0; phaseNr < phasesCount; phaseNr++ {
+		// log.Printf("Phase: %d\n", phaseNr)
 		for i := 0; i < len(ints); i++ {
+			// if i%1000 == 0 {
+			// 	log.Printf("i: %d\n", i)
+			// }
 			var sum int
-			for j := 0; j < len(ints); j += 4 * (i + 1) {
+			for j := 0; j < len(ints)-i; j += 4 * (i + 1) {
 				for k := i; k < i+i+1 && k+j < len(ints); k++ {
 					sum += ints[j+k]
 				}
