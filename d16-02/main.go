@@ -25,14 +25,10 @@ func TTF(ints []int) string {
 			var sum int
 			for j := 0; j < len(ints); j++ {
 				idx := ((j + 1) / (i + 1)) % 4
-				if idx == 0 || idx == 2 {
+				if idx%2 == 0 {
 					continue
 				}
-				if idx == 1 {
-					sum += ints[j]
-				} else {
-					sum -= ints[j]
-				}
+				sum += (2 - idx) * ints[j]
 			}
 			newInts[i] = simplify(sum)
 		}
