@@ -2,6 +2,8 @@ package intcode
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"strings"
 )
 
@@ -23,6 +25,15 @@ type Computer struct {
 	returnOutput bool
 	pos          int
 	relativeBase int
+}
+
+// NewFromReader returns a computer from an io.Reader
+func NewFromReader(r io.Reader, ops ...Option) (*Computer, error) {
+	bs, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("can not read code: %v", err)
+	}
+	return New(string(bs), ops...), nil
 }
 
 // New creates a new computer from an input code.
