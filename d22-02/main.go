@@ -26,8 +26,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("Can not read instructions: %v", err)
 	}
+	printInstructions(instructions)
+
+	// var reminder []instruction
+	// for i := 101_741_582_076_661; i > 1; {
+	// 	if i%2 == 1 {
+	// 		reminder = add(instructions, reminder, deckLen)
+	// 	}
+	// 	i /= 2
+	// 	instructions = double(instructions, deckLen)
+	// }
 
 	value := 2020
+	// value = applyShuffle(value, instructions, deckLen)
+	// value = applyShuffle(value, reminder, deckLen)
+	// fmt.Println(value)
 
 	// for i := 0; i < shuffleCount; i++ {
 	// 	if i%1_000_000 == 0 {
@@ -35,10 +48,22 @@ func main() {
 	// 	}
 	// 	value = applyShuffle(value, instructions)
 	// }
-	value = applyShuffle(value, instructions)
+
+	value = applyShuffle(value, instructions, deckLen)
 	fmt.Println(value)
-	value = applyShuffle(value, instructions)
+	value = applyShuffle(value, instructions, deckLen)
 	fmt.Println(value)
+}
+
+func double(inst []instruction, deckLen int) []instruction {
+	return add(inst, inst, deckLen)
+}
+
+func add(inst1, inst2 []instruction, deckLen int) []instruction {
+	t := append([]instruction(nil), inst1...)
+	t = append(t, inst2...)
+	t = normalize(t, deckLen)
+	return t
 }
 
 func removeReverse(instr []instruction) []instruction {
@@ -76,7 +101,6 @@ func removeReverse(instr []instruction) []instruction {
 }
 
 func moveIncrement(instr []instruction, deckLen int) []instruction {
-	//var nInstr []instruction
 	for i := 0; i < len(instr); i++ {
 		//Switch cut with increment
 		if i != len(instr)-1 && instr[i].iType == iCut && instr[i+1].iType == iIncrement {
@@ -107,7 +131,7 @@ func moveIncrement(instr []instruction, deckLen int) []instruction {
 	return instr
 }
 
-func readInstructions(r io.Reader, deckLen int) ([]instructionF, error) {
+func readInstructions(r io.Reader, deckLen int) ([]instruction, error) {
 	var instructions []instruction
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -141,14 +165,17 @@ func readInstructions(r io.Reader, deckLen int) ([]instructionF, error) {
 		return nil, err
 	}
 
-	instructions = removeReverse(instructions)
-	instructions = moveIncrement(instructions, deckLen)
-	printInstructions(instructions)
-	return instFuncs(instructions, deckLen), nil
+	instructions = normalize(instructions, deckLen)
+	return instructions, nil
 }
 
-func applyShuffle(value int, instr []instructionF) int {
-	for _, instruction := range instr {
+func normalize(instructions []instruction, deckLen int) []instruction {
+	instructions = removeReverse(instructions)
+	return moveIncrement(instructions, deckLen)
+}
+
+func applyShuffle(value int, instr []instruction, deckLen int) int {
+	for _, instruction := range instFuncs(instr, deckLen) {
 		value = instruction(value)
 	}
 	return value
@@ -176,7 +203,6 @@ const (
 	iReverse = iota
 	iCut
 	iIncrement
-	iIncrementCut
 )
 
 type instruction struct {

@@ -123,7 +123,7 @@ func TestApplyShuffle(t *testing.T) {
 				t.Errorf("Can not read instructions: %v", err)
 			}
 
-			value := applyShuffle(tt.index, instructions)
+			value := applyShuffle(tt.index, instructions, tt.len)
 
 			if value != tt.expect {
 				t.Errorf("applyShulle returned %d, expected %d", value, tt.expect)
@@ -147,6 +147,6 @@ func BenchmarkApplyShuffle(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		applyShuffle(2020, instructions)
+		applyShuffle(2020, instructions, deckLen)
 	}
 }
