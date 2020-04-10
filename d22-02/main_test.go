@@ -83,6 +83,41 @@ func TestIncrement(t *testing.T) {
 	}
 }
 
+func TestMulti(t *testing.T) {
+	deckLen := big.NewInt(10)
+	rawInst := `
+	deal into new stack
+	cut -2
+	deal with increment 7
+	cut 8
+	cut -4
+	deal with increment 7
+	cut 3
+	deal with increment 9
+	deal with increment 3
+	cut -1`
+	startValue := int64(3)
+
+	instructions, err := readInstructions(strings.NewReader(rawInst), deckLen)
+	if err != nil {
+		t.Errorf("Can not read instructions: %v", err)
+	}
+
+	v1 := big.NewInt(startValue)
+	for i := 0; i < 101; i++ {
+		applyShuffle(v1, instructions, deckLen)
+	}
+
+	v2 := big.NewInt(startValue)
+	instructions = multi(instructions, 101, deckLen)
+	applyShuffle(v2, instructions, deckLen)
+
+	if v1.Cmp(v2) != 0 {
+		t.Errorf("multi retuend different result :(")
+	}
+
+}
+
 func TestApplyShuffle(t *testing.T) {
 	for _, tt := range []struct {
 		len          int64

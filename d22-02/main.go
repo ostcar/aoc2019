@@ -28,44 +28,41 @@ func main() {
 	if err != nil {
 		log.Fatalf("Can not read instructions: %v", err)
 	}
-	printInstructions(instructions)
 
-	// var reminder []instruction
-	// for i := 101_741_582_076_661; i > 1; {
-	// 	if i%2 == 1 {
-	// 		reminder = add(instructions, reminder, deckLen)
-	// 	}
-	// 	i /= 2
-	// 	instructions = double(instructions, deckLen)
-	// }
+	shuffleCount := 1_000_000
 
+	// Test value in a liniar way
 	value := big.NewInt(2020)
-	// value = applyShuffle(value, instructions, deckLen)
-	// value = applyShuffle(value, reminder, deckLen)
-	// fmt.Println(value)
-
-	// for i := 0; i < shuffleCount; i++ {
-	// 	if i%1_000_000 == 0 {
-	// 		fmt.Println(i)
-	// 	}
-	// 	value = applyShuffle(value, instructions)
-	// }
-
-	applyShuffle(value, instructions, deckLen)
+	for i := 0; i < shuffleCount; i++ {
+		applyShuffle(value, instructions, deckLen)
+	}
 	fmt.Println(value)
+
+	// Test value with multi
+	value = big.NewInt(2020)
+	instructions = multi(instructions, shuffleCount, deckLen)
 	applyShuffle(value, instructions, deckLen)
 	fmt.Println(value)
 }
 
-func double(inst []instruction, deckLen *big.Int) []instruction {
-	return add(inst, inst, deckLen)
+func multi(inst []instruction, count int, deckLen *big.Int) []instruction {
+	var reminder []instruction
+	for i := count; i > 1; i /= 2 {
+		if i%2 == 1 {
+			reminder = add(inst, reminder, deckLen)
+		}
+		inst = add(inst, inst, deckLen)
+	}
+	return add(inst, reminder, deckLen)
 }
 
 func add(inst1, inst2 []instruction, deckLen *big.Int) []instruction {
-	t := append([]instruction(nil), inst1...)
-	t = append(t, inst2...)
-	t = normalize(t, deckLen)
-	return t
+	t1 := copyInstr(inst1)
+	t2 := copyInstr(inst2)
+	t1 = append(t1, t2...)
+	t1 = normalize(t1, deckLen)
+	//printInstructions(t1)
+	return t1
 }
 
 func removeReverse(instr []instruction) []instruction {
@@ -192,7 +189,6 @@ func normalize(instructions []instruction, deckLen *big.Int) []instruction {
 func reverse(value, len *big.Int) {
 	value.Sub(len, value)
 	value.Sub(value, big.NewInt(1))
-	//return len - 1 - value
 }
 
 func cut(value, len, c *big.Int) {
@@ -263,4 +259,17 @@ func printInstructions(instr []instruction) {
 			panic("You should not be here")
 		}
 	}
+	fmt.Println()
+}
+
+func copyInstr(inst []instruction) []instruction {
+	nInst := make([]instruction, len(inst))
+	for i, v := range inst {
+		ins := instruction{iType: v.iType}
+		if v.iType != iReverse {
+			ins.value = new(big.Int).Set(v.value)
+		}
+		nInst[i] = ins
+	}
+	return nInst
 }
