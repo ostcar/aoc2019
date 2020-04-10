@@ -29,18 +29,20 @@ func main() {
 		log.Fatalf("Can not read instructions: %v", err)
 	}
 
-	shuffleCount := 1_000_000
+	//shuffleCount := 1_000_000
 
-	// Test value in a liniar way
-	value := big.NewInt(2020)
-	for i := 0; i < shuffleCount; i++ {
-		applyShuffle(value, instructions, deckLen)
-	}
-	fmt.Println(value)
+	// // Test value in a liniar way
+	// value := big.NewInt(2020)
+	// for i := 0; i < shuffleCount; i++ {
+	// 	applyShuffle(value, instructions, deckLen)
+	// }
+	// fmt.Println(value)
 
 	// Test value with multi
-	value = big.NewInt(2020)
-	instructions = multi(instructions, shuffleCount, deckLen)
+	value := big.NewInt(2020)
+
+	// I don't understand why the second argument is not shuffleCount
+	instructions = multi(instructions, deckLenV-shuffleCount-1, deckLen)
 	applyShuffle(value, instructions, deckLen)
 	fmt.Println(value)
 }
@@ -61,7 +63,6 @@ func add(inst1, inst2 []instruction, deckLen *big.Int) []instruction {
 	t2 := copyInstr(inst2)
 	t1 = append(t1, t2...)
 	t1 = normalize(t1, deckLen)
-	//printInstructions(t1)
 	return t1
 }
 
