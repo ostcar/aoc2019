@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"strings"
 	"testing"
@@ -10,16 +11,20 @@ import (
 
 func TestReverse(t *testing.T) {
 	for _, tt := range []struct {
-		len    int
-		value  int
-		expect int
+		len    int64
+		value  int64
+		expect int64
 	}{
 		{10, 3, 6},
 	} {
 		t.Run(fmt.Sprintf("%d %d", tt.len, tt.value), func(t *testing.T) {
+			len := big.NewInt(tt.len)
+			value := big.NewInt(tt.value)
+			expect := big.NewInt(tt.expect)
 
-			if got := reverse(tt.value, tt.len); got != tt.expect {
-				t.Errorf("reverse() returnd %d, expected %d", got, tt.expect)
+			reverse(value, len)
+			if value.Cmp(expect) != 0 {
+				t.Errorf("reverse() returnd %d, expected %d", value, expect)
 			}
 		})
 	}
@@ -27,10 +32,10 @@ func TestReverse(t *testing.T) {
 
 func TestCut(t *testing.T) {
 	for _, tt := range []struct {
-		len    int
-		index  int
-		cut    int
-		expect int
+		len    int64
+		value  int64
+		cut    int64
+		expect int64
 	}{
 		{10, 3, 3, 0},
 		{10, 7, 3, 4},
@@ -39,9 +44,15 @@ func TestCut(t *testing.T) {
 		{10, 7, -4, 1},
 		{10, 1, -4, 5},
 	} {
-		t.Run(fmt.Sprintf("%d %d", tt.len, tt.index), func(t *testing.T) {
-			if got := cut(tt.index, tt.len, tt.cut); got != tt.expect {
-				t.Errorf("cut() returnd %d, expected %d", got, tt.expect)
+		t.Run(fmt.Sprintf("%d %d", tt.len, tt.value), func(t *testing.T) {
+			len := big.NewInt(tt.len)
+			value := big.NewInt(tt.value)
+			cutV := big.NewInt(tt.cut)
+			expect := big.NewInt(tt.expect)
+
+			cut(value, len, cutV)
+			if value.Cmp(expect) != 0 {
+				t.Errorf("cut() returnd %d, expected %d", value, expect)
 			}
 		})
 	}
@@ -49,18 +60,24 @@ func TestCut(t *testing.T) {
 
 func TestIncrement(t *testing.T) {
 	for _, tt := range []struct {
-		len    int
-		index  int
-		inc    int
-		expect int
+		len    int64
+		value  int64
+		inc    int64
+		expect int64
 	}{
 		{10, 3, 3, 9},
 		{10, 7, 3, 1},
 		{10, 1, 3, 3},
 	} {
-		t.Run(fmt.Sprintf("%d %d", tt.len, tt.index), func(t *testing.T) {
-			if got := increment(tt.index, tt.len, tt.inc); got != tt.expect {
-				t.Errorf("increment() returnd %d, expected %d", got, tt.expect)
+		t.Run(fmt.Sprintf("%d %d", tt.len, tt.value), func(t *testing.T) {
+			len := big.NewInt(tt.len)
+			value := big.NewInt(tt.value)
+			inc := big.NewInt(tt.inc)
+			expect := big.NewInt(tt.expect)
+
+			increment(value, len, inc)
+			if value.Cmp(expect) != 0 {
+				t.Errorf("increment() returnd %d, expected %d", value, expect)
 			}
 		})
 	}
@@ -68,10 +85,10 @@ func TestIncrement(t *testing.T) {
 
 func TestApplyShuffle(t *testing.T) {
 	for _, tt := range []struct {
-		len          int
-		index        int
+		len          int64
+		value        int64
 		instructions string
-		expect       int
+		expect       int64
 	}{
 		{
 			10,
@@ -118,15 +135,19 @@ func TestApplyShuffle(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%d", tt.len), func(t *testing.T) {
-			instructions, err := readInstructions(strings.NewReader(tt.instructions), tt.len)
+			len := big.NewInt(tt.len)
+			value := big.NewInt(tt.value)
+			expect := big.NewInt(tt.expect)
+
+			instructions, err := readInstructions(strings.NewReader(tt.instructions), len)
 			if err != nil {
 				t.Errorf("Can not read instructions: %v", err)
 			}
 
-			value := applyShuffle(tt.index, instructions, tt.len)
+			applyShuffle(value, instructions, len)
 
-			if value != tt.expect {
-				t.Errorf("applyShulle returned %d, expected %d", value, tt.expect)
+			if value.Cmp(expect) != 0 {
+				t.Errorf("applyShulle returned %d, expected %d", value, expect)
 			}
 		})
 	}
@@ -135,9 +156,12 @@ func TestApplyShuffle(t *testing.T) {
 func BenchmarkApplyShuffle(b *testing.B) {
 	f, err := os.Open("input.txt")
 	if err != nil {
-		log.Fatalf("can not open input: %v", err)
+		b.Fatalf("can not open input: %v", err)
 	}
 	defer f.Close()
+
+	deckLen := big.NewInt(deckLenV)
+	value := big.NewInt(2020)
 
 	instructions, err := readInstructions(f, deckLen)
 	if err != nil {
@@ -147,6 +171,6 @@ func BenchmarkApplyShuffle(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		applyShuffle(2020, instructions, deckLen)
+		applyShuffle(value, instructions, deckLen)
 	}
 }

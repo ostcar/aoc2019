@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	deckLen      = 119_315_717_514_047
+	deckLenV     = 119_315_717_514_047
 	shuffleCount = 101_741_582_076_661
 )
 
@@ -21,6 +21,8 @@ func main() {
 		log.Fatalf("can not open input: %v", err)
 	}
 	defer f.Close()
+
+	deckLen := big.NewInt(deckLenV)
 
 	instructions, err := readInstructions(f, deckLen)
 	if err != nil {
@@ -37,7 +39,7 @@ func main() {
 	// 	instructions = double(instructions, deckLen)
 	// }
 
-	value := 2020
+	value := big.NewInt(2020)
 	// value = applyShuffle(value, instructions, deckLen)
 	// value = applyShuffle(value, reminder, deckLen)
 	// fmt.Println(value)
@@ -49,17 +51,17 @@ func main() {
 	// 	value = applyShuffle(value, instructions)
 	// }
 
-	value = applyShuffle(value, instructions, deckLen)
+	applyShuffle(value, instructions, deckLen)
 	fmt.Println(value)
-	value = applyShuffle(value, instructions, deckLen)
+	applyShuffle(value, instructions, deckLen)
 	fmt.Println(value)
 }
 
-func double(inst []instruction, deckLen int) []instruction {
+func double(inst []instruction, deckLen *big.Int) []instruction {
 	return add(inst, inst, deckLen)
 }
 
-func add(inst1, inst2 []instruction, deckLen int) []instruction {
+func add(inst1, inst2 []instruction, deckLen *big.Int) []instruction {
 	t := append([]instruction(nil), inst1...)
 	t = append(t, inst2...)
 	t = normalize(t, deckLen)
@@ -81,14 +83,17 @@ func removeReverse(instr []instruction) []instruction {
 		}
 
 		if inst.iType == iCut {
-			inst.value *= -1
+			inst.value.Mul(inst.value, big.NewInt(-1))
 			nInstr = append(nInstr, inst)
 			continue
 		}
 
 		if inst.iType == iIncrement {
 			nInstr = append(nInstr, inst)
-			nInstr = append(nInstr, instruction{iType: iCut, value: -(inst.value - 1)})
+			t := new(big.Int).Set(inst.value)
+			t.Sub(t, big.NewInt(1))
+			t.Mul(t, big.NewInt(-1))
+			nInstr = append(nInstr, instruction{iType: iCut, value: t})
 			continue
 		}
 
@@ -100,11 +105,14 @@ func removeReverse(instr []instruction) []instruction {
 	return nInstr
 }
 
-func moveIncrement(instr []instruction, deckLen int) []instruction {
+func moveIncrement(instr []instruction, deckLen *big.Int) []instruction {
 	for i := 0; i < len(instr); i++ {
 		//Switch cut with increment
 		if i != len(instr)-1 && instr[i].iType == iCut && instr[i+1].iType == iIncrement {
-			instr[i].value = (instr[i].value * instr[i+1].value) % deckLen
+			instr[i].value.Mul(instr[i].value, instr[i+1].value)
+			instr[i].value.Mod(instr[i].value, deckLen)
+
+			//instr[i].value = (instr[i].value * instr[i+1].value) % deckLen
 			instr[i], instr[i+1] = instr[i+1], instr[i]
 			i = -1
 			continue
@@ -112,8 +120,12 @@ func moveIncrement(instr []instruction, deckLen int) []instruction {
 
 		// Merge double cut
 		if i != len(instr)-1 && instr[i].iType == iCut && instr[i+1].iType == iCut {
-			value := (deckLen + instr[i].value + instr[i+1].value) % deckLen
-			instr[i] = instruction{iType: iCut, value: value}
+			//value := (deckLen + instr[i].value + instr[i+1].value) % deckLen
+			//instr[i] = instruction{iType: iCut, value: value}
+			instr[i].value.Add(instr[i].value, instr[i+1].value)
+			instr[i].value.Add(instr[i].value, deckLen)
+			instr[i].value.Mod(instr[i].value, deckLen)
+
 			instr = append(instr[:i+1], instr[i+2:]...)
 			i--
 			continue
@@ -121,8 +133,11 @@ func moveIncrement(instr []instruction, deckLen int) []instruction {
 
 		//Merge double increment
 		if i != len(instr)-1 && instr[i].iType == iIncrement && instr[i+1].iType == iIncrement {
-			value := (instr[i].value * instr[i+1].value) % deckLen
-			instr[i] = instruction{iType: iIncrement, value: value}
+			//value := (instr[i].value * instr[i+1].value) % deckLen
+			//instr[i] = instruction{iType: iIncrement, value: value}
+			instr[i].value.Mul(instr[i].value, instr[i+1].value)
+			instr[i].value.Mod(instr[i].value, deckLen)
+
 			instr = append(instr[:i+1], instr[i+2:]...)
 			i--
 			continue
@@ -131,7 +146,7 @@ func moveIncrement(instr []instruction, deckLen int) []instruction {
 	return instr
 }
 
-func readInstructions(r io.Reader, deckLen int) ([]instruction, error) {
+func readInstructions(r io.Reader, deckLen *big.Int) ([]instruction, error) {
 	var instructions []instruction
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -140,17 +155,17 @@ func readInstructions(r io.Reader, deckLen int) ([]instruction, error) {
 			continue
 		}
 
-		var i int
+		var i int64
 
 		_, err := fmt.Sscanf(line, "cut %d", &i)
 		if err == nil {
-			instructions = append(instructions, instruction{iType: iCut, value: i})
+			instructions = append(instructions, instruction{iType: iCut, value: big.NewInt(i)})
 			continue
 		}
 
 		_, err = fmt.Sscanf(line, "deal with increment %d", &i)
 		if err == nil {
-			instructions = append(instructions, instruction{iType: iIncrement, value: i})
+			instructions = append(instructions, instruction{iType: iIncrement, value: big.NewInt(i)})
 			continue
 		}
 
@@ -169,35 +184,27 @@ func readInstructions(r io.Reader, deckLen int) ([]instruction, error) {
 	return instructions, nil
 }
 
-func normalize(instructions []instruction, deckLen int) []instruction {
+func normalize(instructions []instruction, deckLen *big.Int) []instruction {
 	instructions = removeReverse(instructions)
 	return moveIncrement(instructions, deckLen)
 }
 
-func applyShuffle(value int, instr []instruction, deckLen int) int {
-	for _, instruction := range instFuncs(instr, deckLen) {
-		value = instruction(value)
-	}
-	return value
+func reverse(value, len *big.Int) {
+	value.Sub(len, value)
+	value.Sub(value, big.NewInt(1))
+	//return len - 1 - value
 }
 
-func reverse(value, len int) int {
-	return len - 1 - value
+func cut(value, len, c *big.Int) {
+	value.Sub(value, c)
+	value.Add(value, len)
+	value.Mod(value, len)
 }
 
-func cut(value, len, c int) int {
-	return (len + value - c) % len
+func increment(value, len, n *big.Int) {
+	value.Mul(value, n)
+	value.Mod(value, len)
 }
-
-func increment(value, len, n int) int {
-	v1 := big.NewInt(int64(value))
-	v2 := big.NewInt(int64(n))
-	v1 = v1.Mul(v1, v2)
-	v1.Mod(v1, big.NewInt(int64(len)))
-	return int(v1.Int64())
-}
-
-type instructionF func(value int) int
 
 const (
 	iReverse = iota
@@ -207,32 +214,40 @@ const (
 
 type instruction struct {
 	iType int
-	value int
+	value *big.Int
 }
 
-func instFuncs(instr []instruction, l int) []instructionF {
+type instructionF func(value *big.Int)
+
+func instFuncs(instr []instruction, l *big.Int) []instructionF {
 	instF := make([]instructionF, len(instr))
 	for i, v := range instr {
 		switch v.iType {
 		case iReverse:
-			instF[i] = func(value int) int {
-				return reverse(value, l)
+			instF[i] = func(value *big.Int) {
+				reverse(value, l)
 			}
 		case iCut:
 			vi := v.value
-			instF[i] = func(value int) int {
-				return cut(value, l, vi)
+			instF[i] = func(value *big.Int) {
+				cut(value, l, vi)
 			}
 		case iIncrement:
 			vi := v.value
-			instF[i] = func(value int) int {
-				return increment(value, l, vi)
+			instF[i] = func(value *big.Int) {
+				increment(value, l, vi)
 			}
 		default:
 			panic("You should not be here :(")
 		}
 	}
 	return instF
+}
+
+func applyShuffle(value *big.Int, instr []instruction, deckLen *big.Int) {
+	for _, instruction := range instFuncs(instr, deckLen) {
+		instruction(value)
+	}
 }
 
 func printInstructions(instr []instruction) {
