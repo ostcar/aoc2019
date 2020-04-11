@@ -35,3 +35,24 @@ func WithName(name string) Option {
 		c.name = name
 	}
 }
+
+// WithInputFunc reads the next input value from an input function.
+func WithInputFunc(f func() int) Option {
+	return func(c *Computer) {
+		c.inputFunc = f
+	}
+}
+
+// WithDebug prints information on every operation.
+func WithDebug() Option {
+	return func(c *Computer) {
+		c.debug = true
+	}
+}
+
+// WithInputOutputDebug prints information on input and output operations
+func WithInputOutputDebug() Option {
+	return func(c *Computer) {
+		c.ioDebug = true
+	}
+}

@@ -25,6 +25,9 @@ type Computer struct {
 	returnOutput bool
 	pos          int
 	relativeBase int
+	inputFunc    func() int
+	debug        bool
+	ioDebug      bool
 }
 
 // NewFromReader returns a computer from an io.Reader
@@ -87,7 +90,7 @@ func (c *Computer) getOpArgs(nr int) (operation, []int) {
 
 	op, ok := c.operations[opCode]
 	if !ok {
-		panic(fmt.Sprintf("Unknown operation %d on position %d", c.get(nr), nr))
+		panic(fmt.Sprintf("Computer %s: Unknown operation %d on position %d", c.name, c.get(nr), nr))
 	}
 
 	var args []int
@@ -121,4 +124,8 @@ func (c *Computer) set(nr, value int) {
 		c.memory = buf
 	}
 	c.memory[nr] = value
+}
+
+func (c *Computer) log(s string, format ...interface{}) {
+	fmt.Printf("Computer %s: %s\n", c.name, fmt.Sprintf(s, format...))
 }
